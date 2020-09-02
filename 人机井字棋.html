@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>TicTacToe</title>
+	<style type="text/css">
+		.cell {
+			width: 100px;
+			height: 100px;
+			background: green;
+			display: inline-block;
+			border: 1px solid white;
+			vertical-align: middle;
+			line-height: 100px;
+			font-size: 50px;
+			text-align: center;
+		}
+	</style>
+</head>
+<body>
+	<div id="board"></div>
+</body>
+<script type="text/javascript">
+	// 胜负是否已定
+	let outcome = false
+	// 1 = :o: 2 = :x:
+	let color = 1;
+	// 布局 3 * 3
+	let pattern = [
+		0, 0, 0,
+		0, 0, 0,
+		0, 0, 0,
+	];
+
+	function show() {
+		let board = document.getElementById('board');
+		// 每次操作 DOM 元素前都需要清空上一次内容
+		board.innerHTML = '';
+
+		// 遍历行
+		for(let i = 0; i < 3; i++) {
+			// 遍历行内
+			for(let j = 0; j < 3; j++) {
+				let cell = document.createElement('div');
+				// 创建 div 后，绑定 class 样式
+				cell.classList.add('cell');
+				cell.innerText = 
+					pattern[i * 3 + j] == 2 ? '❌' :
+					pattern[i * 3 + j] == 1 ? '⭕️' : '';
+				// 给每个元素绑定事件
+				cell.addEventListener('click', () => userMove(j, i));
+				board.appendChild(cell);
+			};
+			// 每排满 3 个就添加换行
+			board.appendChild(document.createElement('br'));
+		};
+	};
+
+	// 元素点击调用方法
+	function userMove(x, y) {
+		if (outcome) {
+			alert('胜负已定，请重新开局')
+			return;
+		}
+		if (pattern[y * 3 + x]) {
+			alert('该位置已落子，请选择其他位置')
+			return;
+		};
+		// 给当前点击对应的数据赋值
+		pattern[y * 3 + x] = color;
+		// 判断是否已经赢了
+		if (check(pattern, color)) {
+			outcome = true
+			alert(color == 2 ? '❌ 赢了' : '⭕️ 赢了')
+		}
+		// 3 - 1 = 2
+		// 3 - 2 = 1
+		// 重新赋值棋子
+		color = 3 - color;
+		// 重新绘制 DOM
+		show();
+		// AI 对手
+		computerMove();
+	};
+
+	// AI 方法
+	function computerMove() {
+		// 计算下一步落子位置
+		let choice = bestChoice(pattern, color);
+		if (choice.point) {
+			pattern[choice.point[1] * 3 + choice.point[0]] = color;
+		}
+		if (check(pattern, color)) {
+			outcome = true
+			alert(color == 2 ? '❌ 赢了' : '⭕️ 赢了')
+		}
+		color = 3 - color;
+		show()
+	}
+
+	// 是否已出现连续 3 个图形
+	function check(pattern, color) {
+		// 横排判断
+		for (let i = 0; i < 3; i++) {
+			let win = true;
+			for (let j = 0; j < 3; j++) {
+				if (pattern[i * 3 + j] !== color) {
+					win = false;
+				};
+			};
+			if (win) {
+				return true
+			};
+		};
+		// 竖排
+		for (let i = 0; i < 3; i++) {
+			let win = true;
+			for (let j = 0; j < 3; j++) {
+				if (pattern[j * 3 + i] !== color) {
+					win = false;
+				};
+			};
+			if (win) {
+				return true
+			};
+		};
+		// 右斜角
+		{
+			let win = true;
+			for (let j = 0; j < 3; j++) {
+				if (pattern[j * 3 + 2 - j] !== color) {
+					win = false
+				}
+			}
+			if (win) {
+				return true
+			}
+		};
+		// 左斜角
+		{
+			let win = true;
+			for (let j = 0; j < 3; j++) {
+				if (pattern[j * 3 + j] !== color) {
+					win = false
+				}
+			}
+			if (win) {
+				return true
+			}
+		};
+
+		return false
+	};
+
+	// 复制对象
+	function clone(pattern) {
+		return Object.create(pattern)
+	}
+
+	// 预判方法
+	function wilWin(pattern, color) {
+		for (let i = 0; i < 3; i++) {
+			for (let j = 0; j < 3; j ++) {
+				// 判断当前有落子就跳过
+				if (pattern[i * 3 + j]) {
+					continue
+				};
+				// 判断当前没有落子就进行预判操作
+				let tmp = clone(pattern);
+				tmp[i * 3 + j] = color;
+				// 为 true 则表示下一步将获胜
+				if (check(tmp, color)) {
+					return [j, i]
+				}
+			}
+		}
+		return null;
+	};
+
+	// AI 计算下一步落子
+	function bestChoice(pattern, color) {
+		// 获取预判人类将获胜的落子位置
+		let point = wilWin(pattern, color);
+		if (point) {
+			return {
+				point: point,
+				result: 1
+			}
+		}
+		// 初始化：-2 赢：1 输：-1 平：0
+		let result = -2;
+		outer:for (let i = 0; i < 3; i++) {
+			for (let j = 0; j < 3; j++) {
+				if (pattern[i * 3 + j]) {
+					continue
+				};
+				let tmp = clone(pattern);
+				tmp[i * 3 + j] = color;
+				let opp = bestChoice(tmp, 3 - color);
+				// 如果是 opp.result 为 1 就表示人类要赢，我们就视为我们要输进行判断
+				if (-opp.result >= result) {
+					point = [j, i];
+					result = -opp.result
+				};
+				// 如果为 1 了就表示我们要赢了，直接退出循环
+				if (result == 1) {
+					break outer;
+				};
+			}
+		}
+
+		// 返回对我们最有利的位置
+		return {
+			point: point,
+			result: point ? result : 0
+		}
+	}
+
+	show(pattern);
+	console.log(bestChoice(pattern, color))
+</script>
+</html>
