@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>async/await 写法</title>
+  <style>
+    section {
+      display: inline-block;
+      padding: 0 20px;
+      border: 1px solid black;
+      border-radius: 80px;
+    }
+    div {
+      background-color: gray;
+      display: inline-block;
+      margin: 30px;
+      width: 100px;
+      height: 100px;
+      border-radius: 50px;
+    }
+    .green.light {
+      background-color: green;
+    }
+    .red.light {
+      background-color: red;
+    }
+    .yellow.light {
+      background-color: yellow;
+    }
+  </style>
+</head>
+<body>
+  <section>
+    <div class="green"></div>
+    <div class="yellow"></div>
+    <div class="red"></div>
+  </section>
+  <button>next</button>
+</body>
+<script>
+  /**
+   * 红绿灯规则：
+   * 绿灯 --> 10/s --> 黄灯
+   * 黄灯 --> 3/s  --> 红灯
+   * 红灯 --> 8/s  --> 绿灯
+  */
+  const but = document.getElementsByTagName('button')[0]
+
+  function green() {
+    var lights = document.getElementsByTagName('div');
+    for (let i = 0; i < 3; i++) {
+      lights[i].classList.remove('light')
+    }
+    document.getElementsByClassName('green')[0].classList.add('light')
+  }
+
+  function red() {
+    var lights = document.getElementsByTagName('div');
+    for (let i = 0; i < 3; i++) {
+      lights[i].classList.remove('light')
+    }
+    document.getElementsByClassName('red')[0].classList.add('light')
+  }
+
+  function yellow() {
+    var lights = document.getElementsByTagName('div');
+    for (let i = 0; i < 3; i++) {
+      lights[i].classList.remove('light')
+    }
+    document.getElementsByClassName('yellow')[0].classList.add('light')
+  }
+
+  function sleep(time) {
+    return new Promise((resolve, reject) => {
+      setTimeout(resolve, time)
+    })
+  }
+
+  // 手动控制
+  function happen(element, eventName) {
+    return new Promise((resolve, reject) => {
+      element.addEventListener(eventName, resolve, {once: true})
+    })
+  }
+
+  async function start() {
+    while(true) {
+      green()
+      await sleep(1000 * 10) // happen(but, 'click')
+      yellow()
+      await sleep(3000) // happen(but, 'click')
+      red()
+      await sleep(8000) // happen(but, 'click')
+    }
+  }
+
+  start();
+</script>
+</html>
